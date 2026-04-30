@@ -1,6 +1,8 @@
 import http from "node:http";
 import express from "express";
 import path from "node:path";
+import { Server } from "socket.io";
+
 
 async function main() {
     const app = express();
@@ -8,6 +10,16 @@ async function main() {
     const server = http.createServer(app);
 
     const PORT = process.env.PORT ?? 8000;
+
+    const io = new Server();
+
+    io.attach(server);
+
+    io.on("connection", (socket) => {
+        console.log(`Socket connected`, { id: socket.id });
+    })
+
+    
 
     app.use(express.static(path.resolve("./public")));
 

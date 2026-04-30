@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10000 Checkboxes</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        }
+
+        body {
+            background: #0d0d0d;
+            color: #eaeaea;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            border-left: 4px solid #22c55e;
+            padding-left: 12px;
+        }
+
+        #container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+            gap: 10px;
+            max-width: 1000px;
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #444;
+            background: #111;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease;
+        }
+
+        input[type="checkbox"]:hover {
+            border-color: #22c55e;
+        }
+
+        input[type="checkbox"]:checked {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+
+        input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 6px;
+            height: 12px;
+            border: solid #0d0d0d;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        /* Smooth click feel */
+        input[type="checkbox"]:active {
+            transform: scale(0.9);
+        }
+
+        /* Scroll styling (optional but clean) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Checkboxes</h1>
+    <div id="container">
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            const container = document.getElementById("container");
+            const CHECKBOX_COUNT = 1000
+
+            new Array(CHECKBOX_COUNT).fill(null).forEach((_, index) => {
+                const input = document.createElement("input");
+                input.type = "checkbox"
+                container.appendChild(input)
+            })
+        </script>
+    </div>
+</body>
+</html>
