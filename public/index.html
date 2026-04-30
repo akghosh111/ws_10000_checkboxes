@@ -103,20 +103,30 @@
                 if(input) {
                     input.checked = checked;
                 }
-            })
+            });
 
-            new Array(CHECKBOX_COUNT).fill(null).forEach((_, index) => {
-                const input = document.createElement("input");
-                input.type = "checkbox";
-                input.id = `checkbox-${index}`;
+            window.addEventListener("load", async () => {
+                const response = await fetch("/checkboxes", { method: "GET" });
+                const data = await response.json();
+                if(data && data.checkboxes) {
+                    data.checkboxes.forEach((serverValue, index) => {
+                        const input = document.createElement("input");
+                        
+                        input.type = "checkbox";
+                        input.id = `checkbox-${index}`;
+                        input.checked = serverValue;
 
-                input.addEventListener("change", (event) => {
-                    const checked = event.target.checked;
-                    console.log("Checkbox changed", { index, checked });
-                    socket.emit("client:checkbox:change", { index, checked });
-                })
-                container.appendChild(input)
-            })
+                        input.addEventListener("change", (event) => {
+                            const checked = event.target.checked;
+                            console.log("Checkbox changed", { index, checked });
+                            socket.emit("client:checkbox:change", { index, checked });
+                        });
+                        container.appendChild(input)
+                    });
+                }
+            });
+
+            
         </script>
     </div>
 </body>
