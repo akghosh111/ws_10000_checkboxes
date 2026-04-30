@@ -3,15 +3,13 @@ import express from "express";
 import path from "node:path";
 import { Server } from "socket.io";
 
-import { publisher, subscriber } from "./redis-connection.js";
+import { publisher, subscriber, redis } from "./redis-connection.js";
 
 
 const CHECKBOX_SIZE = 10000;
+const CHECKBOX_STATE_KEY = "checkbox-state"
 
 
-const state = {
-    checkboxes: new Array(CHECKBOX_SIZE).fill(false),
-}
 
 
 async function main() {
@@ -29,7 +27,9 @@ async function main() {
     subscriber.on("message", (channel, message) => {
         if(channel === "internal-server:checkbox:change") {
             const { index, checked } = JSON.parse(message)
-            state.checkboxes[index] = checked;
+            
+
+
             io.emit("server:checkbox:change", { index, checked });
         }
     })
@@ -39,6 +39,18 @@ async function main() {
 
         socket.on("client:checkbox:change", async (data) => {
             console.log(`[Socket:{socket.id}]:client:checkbox:change`, data);
+            const exisitingState = await redis.get(CHECKBOX_STATE_KEY)
+
+
+            if(exisitingState) {
+                const remoteData = JSON.parse(exisitingState)
+                remoteData[data.index] = data.checked;
+
+                await redis.set(CHECKBOX_STATE_KEY, JSON.stringify(remoteData))
+            } else {
+                await redis.set(CHECKBOX_STATE_KEY, JSON.stringify(new Array(CHECKBOX_SIZE).fill(false)))
+            }
+            
             // io.emit("server:checkbox:change", data);
             // state.checkboxes[data.index] = data.checked;
             await publisher.publish('internal-server:checkbox:change',
@@ -53,8 +65,13 @@ async function main() {
 
     app.get("/health", (req, res) => res.json({ healthy: true }));
 
-    app.get("/checkboxes", (req, res) => {
-        return res.json({ checkboxes: state.checkboxes });
+    app.get("/checkboxes", async (req, res) => {
+        const exisitingState = await redis.get(CHECKBOX_STATE_KEY)
+        if(exisitingState) {
+                const remoteData = JSON.parse(exisitingState)
+                return res.json({ checkboxes: remoteData });
+        }
+        return res.json({ checkboxes: new Array(CHECKBOX_SIZE).fill(false) });
     })
 
     server.listen(PORT, () => {

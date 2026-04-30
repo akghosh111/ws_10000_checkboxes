@@ -7,6 +7,10 @@ function createRedisConnection() {
     })
 }
 
+
+export const redis = createRedisConnection();
+
+
 export const publisher = createRedisConnection();
 
 export const subscriber = createRedisConnection();
