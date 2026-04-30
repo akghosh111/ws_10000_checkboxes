@@ -19,7 +19,8 @@ async function main() {
         console.log(`Socket connected`, { id: socket.id });
 
         socket.on("client:checkbox:change", (data) => {
-            console.log(`[Socket:{socket.id}]:client:checkbox:change`, data)
+            console.log(`[Socket:{socket.id}]:client:checkbox:change`, data);
+            io.emit("server:checkbox:change", data);
         })
     })
 
