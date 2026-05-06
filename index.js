@@ -34,29 +34,49 @@ async function main() {
         }
     })
 
+    async function getOrInitializeState() {
+        const existingState = await redis.get(CHECKBOX_STATE_KEY);
+
+        if (existingState) {
+            return JSON.parse(existingState);
+        }
+
+        const initialState = new Array(CHECKBOX_SIZE).fill(false);
+        await redis.set(CHECKBOX_STATE_KEY, JSON.stringify(initialState));
+        return initialState;
+    }
+
     io.on("connection", (socket) => {
         console.log(`Socket connected`, { id: socket.id });
 
+        // socket.on("client:checkbox:change", async (data) => {
+        //     console.log(`[Socket:{socket.id}]:client:checkbox:change`, data);
+
+        //     const state = await getOrInitializeState();
+        //     state[data.index] = data.checked;
+
+        //     await redis.set(CHECKBOX_STATE_KEY, JSON.stringify(state));
+
+        //     await publisher.publish(
+        //         "internal-server:checkbox:change",
+        //         JSON.stringify(data)
+        //     );
+        // });
+
         socket.on("client:checkbox:change", async (data) => {
-            console.log(`[Socket:{socket.id}]:client:checkbox:change`, data);
-            const exisitingState = await redis.get(CHECKBOX_STATE_KEY)
+            const { index, checked } = data;
 
-
-            if(exisitingState) {
-                const remoteData = JSON.parse(exisitingState)
-                remoteData[data.index] = data.checked;
-
-                await redis.set(CHECKBOX_STATE_KEY, JSON.stringify(remoteData))
+            if (checked) {
+                await redis.hset(CHECKBOX_STATE_KEY, index, "1");
             } else {
-                await redis.set(CHECKBOX_STATE_KEY, JSON.stringify(new Array(CHECKBOX_SIZE).fill(false)))
+                await redis.hDel(CHECKBOX_STATE_KEY, index);
             }
-            
-            // io.emit("server:checkbox:change", data);
-            // state.checkboxes[data.index] = data.checked;
-            await publisher.publish('internal-server:checkbox:change',
-                JSON.stringify(data),
-            )
-        })
+
+            await publisher.publish(
+                "internal-server:checkbox:change",
+                JSON.stringify(data)
+            );
+        });
     })
 
     
@@ -65,14 +85,22 @@ async function main() {
 
     app.get("/health", (req, res) => res.json({ healthy: true }));
 
+    // app.get("/checkboxes", async (req, res) => {
+    //     const state = await getOrInitializeState();
+    //     return res.json({ checkboxes: state });
+    // });
+
     app.get("/checkboxes", async (req, res) => {
-        const exisitingState = await redis.get(CHECKBOX_STATE_KEY)
-        if(exisitingState) {
-                const remoteData = JSON.parse(exisitingState)
-                return res.json({ checkboxes: remoteData });
+        const data = await redis.hgetall(CHECKBOX_STATE_KEY);
+
+        const checkboxes = new Array(CHECKBOX_SIZE).fill(false);
+
+        for (const index in data) {
+            checkboxes[index] = true;
         }
-        return res.json({ checkboxes: new Array(CHECKBOX_SIZE).fill(false) });
-    })
+
+        return res.json({ checkboxes });
+    });
 
     server.listen(PORT, () => {
         console.log(`Server is running on http://localhost:${PORT}`);
